@@ -1,0 +1,1382 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Futsal Trainer Pro - Aplikasi Latihan Futsal</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Canvas Confetti CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        pitch: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            400: '#4ade80',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            800: '#166534',
+                            900: '#14532d',
+                            950: '#052e16'
+                        },
+                        darkcourt: '#0d131a',
+                        courtcard: '#161e29',
+                        courtborder: '#232f3e',
+                        neonaccent: '#00f0ff'
+                    },
+                    fontFamily: {
+                        rajdhani: ['Rajdhani', 'sans-serif'],
+                        sans: ['Plus Jakarta Sans', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #0b0f17;
+            color: #e2e8f0;
+        }
+
+        .heading-font {
+            font-family: 'Rajdhani', sans-serif;
+        }
+
+        .court-gradient {
+            background: linear-gradient(135deg, #161e29 0%, #0d131a 100%);
+        }
+
+        .active-tab {
+            background-color: #22c55e;
+            color: #052e16;
+            font-weight: 700;
+            box-shadow: 0 0 15px rgba(34, 197, 94, 0.4);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0d131a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #232f3e;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #22c55e;
+        }
+
+        .glow-effect {
+            box-shadow: 0 0 20px rgba(34, 197, 94, 0.15);
+        }
+
+        .futsal-court-bg {
+            background-color: #0b3c26;
+            background-image: 
+                radial-gradient(circle at 50% 50%, rgba(255,255,255,0.08) 0%, transparent 60%),
+                linear-gradient(to right, rgba(255,255,255,0.1) 2px, transparent 2px),
+                linear-gradient(to bottom, rgba(255,255,255,0.1) 2px, transparent 2px);
+            background-size: 100% 100%, 40px 40px, 40px 40px;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col pb-20 md:pb-6 selection:bg-pitch-500 selection:text-pitch-950">
+
+    <!-- Top Header -->
+    <header class="border-b border-courtborder bg-courtcard/90 backdrop-blur-md sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-pitch-500 flex items-center justify-center text-pitch-950 text-xl font-black shadow-lg shadow-pitch-500/30">
+                    <i class="fa-solid fa-futbol"></i>
+                </div>
+                <div>
+                    <h1 class="heading-font text-2xl font-bold tracking-wider text-white uppercase leading-none">
+                        FUTSAL<span class="text-pitch-400">TRAINER</span> PRO
+                    </h1>
+                    <p class="text-[11px] text-slate-400 font-medium">Asisten Latihan & Taktik Futsal Digital</p>
+                </div>
+            </div>
+
+            <!-- Global Quick Stats -->
+            <div class="hidden sm:flex items-center gap-4 bg-darkcourt/80 px-4 py-2 rounded-xl border border-courtborder">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-fire text-orange-500 text-sm"></i>
+                    <div>
+                        <div class="text-[10px] text-slate-400 uppercase">Streak</div>
+                        <div class="text-xs font-bold text-white"><span id="headerStreak">0</span> Hari</div>
+                    </div>
+                </div>
+                <div class="w-px h-6 bg-courtborder"></div>
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-clock text-pitch-400 text-sm"></i>
+                    <div>
+                        <div class="text-[10px] text-slate-400 uppercase">Total Latihan</div>
+                        <div class="text-xs font-bold text-white"><span id="headerTotalTime">0</span> Min</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Navigation Bar -->
+    <nav class="bg-darkcourt border-b border-courtborder sticky top-[61px] z-30 overflow-x-auto no-scrollbar">
+        <div class="max-w-7xl mx-auto px-4 flex gap-2 py-2.5">
+            <button onclick="switchTab('drills')" id="tabBtn-drills" class="active-tab px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-2 transition whitespace-nowrap">
+                <i class="fa-solid fa-dumbbell"></i> Modul Latihan
+            </button>
+            <button onclick="switchTab('timer')" id="tabBtn-timer" class="px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-300 hover:bg-courtcard transition whitespace-nowrap flex items-center gap-2">
+                <i class="fa-solid fa-stopwatch text-pitch-400"></i> Timer HIIT/Tabata
+            </button>
+            <button onclick="switchTab('tactics')" id="tabBtn-tactics" class="px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-300 hover:bg-courtcard transition whitespace-nowrap flex items-center gap-2">
+                <i class="fa-solid fa-chalkboard-user text-sky-400"></i> Papan Taktik 2D
+            </button>
+            <button onclick="switchTab('plan')" id="tabBtn-plan" class="px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-300 hover:bg-courtcard transition whitespace-nowrap flex items-center gap-2">
+                <i class="fa-solid fa-calendar-check text-amber-400"></i> Program Warm-Up
+            </button>
+            <button onclick="switchTab('logs')" id="tabBtn-logs" class="px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-300 hover:bg-courtcard transition whitespace-nowrap flex items-center gap-2">
+                <i class="fa-solid fa-chart-line text-purple-400"></i> Log & Progres
+            </button>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-4 pt-6 flex-grow w-full">
+
+        <!-- SECTION 1: DRILLS LIBRARY -->
+        <section id="view-drills" class="space-y-6">
+            <!-- Filter & Search Bar -->
+            <div class="bg-courtcard p-4 rounded-2xl border border-courtborder flex flex-col md:flex-row gap-4 items-center justify-between">
+                <div>
+                    <h2 class="heading-font text-xl font-bold text-white tracking-wide uppercase flex items-center gap-2">
+                        <i class="fa-solid fa-list-check text-pitch-400"></i> Katalogue Drill Futsal
+                    </h2>
+                    <p class="text-xs text-slate-400">Pilih modul teknik untuk mengasah kontrol telapak kaki, passing cepat, & akselerasi.</p>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-2 w-full md:w-auto">
+                    <button onclick="filterDrills('all', this)" class="drill-filter-btn px-3 py-1.5 rounded-lg text-xs font-bold bg-pitch-500 text-pitch-950 transition">Semua</button>
+                    <button onclick="filterDrills('control', this)" class="drill-filter-btn px-3 py-1.5 rounded-lg text-xs font-bold bg-darkcourt text-slate-300 border border-courtborder hover:border-pitch-500 transition">Sole Control</button>
+                    <button onclick="filterDrills('passing', this)" class="drill-filter-btn px-3 py-1.5 rounded-lg text-xs font-bold bg-darkcourt text-slate-300 border border-courtborder hover:border-pitch-500 transition">Passing & Wall</button>
+                    <button onclick="filterDrills('shooting', this)" class="drill-filter-btn px-3 py-1.5 rounded-lg text-xs font-bold bg-darkcourt text-slate-300 border border-courtborder hover:border-pitch-500 transition">Finishing</button>
+                    <button onclick="filterDrills('agility', this)" class="drill-filter-btn px-3 py-1.5 rounded-lg text-xs font-bold bg-darkcourt text-slate-300 border border-courtborder hover:border-pitch-500 transition">Agility & Stamina</button>
+                </div>
+            </div>
+
+            <!-- Drill Cards Grid -->
+            <div id="drillsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                <!-- Dynamically generated drills -->
+            </div>
+        </section>
+
+        <!-- SECTION 2: HIIT / TABATA TIMER -->
+        <section id="view-timer" class="hidden space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Main Timer Display -->
+                <div class="lg:col-span-2 bg-courtcard rounded-3xl p-6 sm:p-8 border border-courtborder flex flex-col items-center justify-center relative overflow-hidden glow-effect">
+                    <div class="absolute top-4 left-4 flex items-center gap-2 bg-darkcourt px-3 py-1.5 rounded-full border border-courtborder text-xs font-semibold text-slate-300">
+                        <span id="timerStateBadge" class="w-2.5 h-2.5 rounded-full bg-slate-500 animate-pulse"></span>
+                        <span id="timerStatusText">Siap Dimulai</span>
+                    </div>
+
+                    <!-- Mode Preset selector -->
+                    <div class="flex flex-wrap justify-center gap-2 mt-8 mb-6">
+                        <button onclick="loadTimerPreset('futsalHiit')" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-darkcourt border border-courtborder text-slate-300 hover:border-pitch-500 transition">
+                            ⚡ Futsal Sprint HIIT (20s/10s)
+                        </button>
+                        <button onclick="loadTimerPreset('ballMastery')" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-darkcourt border border-courtborder text-slate-300 hover:border-pitch-500 transition">
+                            ⚽ Sole Ball Mastery (45s/15s)
+                        </button>
+                        <button onclick="loadTimerPreset('recovery')" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-darkcourt border border-courtborder text-slate-300 hover:border-pitch-500 transition">
+                            🧘 Cool Down (30s/30s)
+                        </button>
+                    </div>
+
+                    <!-- Circular Progress Display -->
+                    <div class="relative w-64 h-64 sm:w-72 sm:h-72 my-4 flex flex-col items-center justify-center">
+                        <svg class="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                            <circle cx="50" cy="50" r="44" stroke="currentColor" stroke-width="6" class="text-darkcourt" fill="transparent" />
+                            <circle id="timerProgressRing" cx="50" cy="50" r="44" stroke="currentColor" stroke-width="6" stroke-dasharray="276.46" stroke-dashoffset="0" stroke-linecap="round" class="text-pitch-500 transition-all duration-1000" fill="transparent" />
+                        </svg>
+                        <div class="absolute text-center">
+                            <div id="timerCountdown" class="heading-font text-6xl sm:text-7xl font-bold tracking-tight text-white">00:20</div>
+                            <div id="timerSubLabel" class="text-xs font-bold text-pitch-400 uppercase tracking-widest mt-1">Sesi Latihan</div>
+                            <div class="text-[11px] text-slate-400 mt-2">Ronde <span id="currentSetText" class="text-white font-bold">1</span> dari <span id="totalSetsText" class="text-white font-bold">8</span></div>
+                        </div>
+                    </div>
+
+                    <!-- Timer Controls -->
+                    <div class="flex items-center gap-4 mt-6">
+                        <button id="btnStartTimer" onclick="toggleTimer()" title="Mulai / Jeda" class="w-16 h-16 rounded-2xl bg-pitch-500 hover:bg-pitch-400 text-pitch-950 font-black text-2xl flex items-center justify-center shadow-lg shadow-pitch-500/30 active:scale-95 transition">
+                            <i class="fa-solid fa-play" id="timerIcon"></i>
+                        </button>
+                        <button onclick="resetTimer()" title="Reset Timer" class="w-14 h-14 rounded-2xl bg-darkcourt hover:bg-slate-800 text-slate-300 border border-courtborder text-lg flex items-center justify-center active:scale-95 transition">
+                            <i class="fa-solid fa-rotate-right"></i>
+                        </button>
+                        <button onclick="toggleSound()" title="Aktifkan / Matikan Suara" class="w-14 h-14 rounded-2xl bg-darkcourt hover:bg-slate-800 text-slate-300 border border-courtborder text-lg flex items-center justify-center active:scale-95 transition">
+                            <i class="fa-solid fa-volume-high text-pitch-400" id="soundToggleIcon"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Custom Timer Adjuster & Sound Options -->
+                <div class="space-y-6">
+                    <div class="bg-courtcard p-6 rounded-3xl border border-courtborder space-y-4">
+                        <h3 class="heading-font text-lg font-bold text-white uppercase flex items-center gap-2">
+                            <i class="fa-solid fa-sliders text-pitch-400"></i> Pengaturan Interval
+                        </h3>
+
+                        <div class="space-y-3 text-xs">
+                            <div>
+                                <label class="text-slate-400 font-medium flex justify-between mb-1">
+                                    <span>Durasi Kerja / Drill (Detik):</span>
+                                    <span id="valWorkSec" class="text-pitch-400 font-bold">20s</span>
+                                </label>
+                                <input type="range" id="inputWorkSec" min="5" max="120" value="20" step="5" oninput="updateCustomTimerInputs()" class="w-full accent-pitch-500">
+                            </div>
+
+                            <div>
+                                <label class="text-slate-400 font-medium flex justify-between mb-1">
+                                    <span>Durasi Istirahat (Detik):</span>
+                                    <span id="valRestSec" class="text-amber-400 font-bold">10s</span>
+                                </label>
+                                <input type="range" id="inputRestSec" min="5" max="60" value="10" step="5" oninput="updateCustomTimerInputs()" class="w-full accent-amber-500">
+                            </div>
+
+                            <div>
+                                <label class="text-slate-400 font-medium flex justify-between mb-1">
+                                    <span>Jumlah Ronde / Set:</span>
+                                    <span id="valTotalSets" class="text-sky-400 font-bold">8</span>
+                                </label>
+                                <input type="range" id="inputTotalSets" min="1" max="20" value="8" step="1" oninput="updateCustomTimerInputs()" class="w-full accent-sky-500">
+                            </div>
+                        </div>
+
+                        <button onclick="applyCustomTimer()" class="w-full py-2.5 rounded-xl bg-darkcourt hover:bg-slate-800 border border-pitch-500 text-pitch-400 font-bold text-xs transition">
+                            Simpan Settingan
+                        </button>
+                    </div>
+
+                    <!-- Audio Cues Guide -->
+                    <div class="bg-courtcard p-5 rounded-3xl border border-courtborder flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-2xl bg-pitch-500/10 text-pitch-400 flex items-center justify-center text-xl shrink-0">
+                            <i class="fa-solid fa-volume-high"></i>
+                        </div>
+                        <div class="text-xs">
+                            <div class="font-bold text-white mb-0.5">Suara Peluit Otomatis</div>
+                            <div class="text-slate-400 leading-relaxed">Sistem menyuarakan sinyal bip otomatis 3 detik sebelum pergantian interval kerja & istirahat.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 3: 2D TACTICAL BOARD -->
+        <section id="view-tactics" class="hidden space-y-6">
+            <div class="bg-courtcard p-4 sm:p-6 rounded-3xl border border-courtborder space-y-4">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                        <h2 class="heading-font text-2xl font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                            <i class="fa-solid fa-chalkboard text-sky-400"></i> Papan Taktik Interaktif
+                        </h2>
+                        <p class="text-xs text-slate-400">Simulasikan rotasi 3-1, 2-2, Power Play, atau pergerakan drill dengan menarik elemen ke lapangan.</p>
+                    </div>
+
+                    <!-- Canvas Tools -->
+                    <div class="flex flex-wrap items-center gap-2">
+                        <button onclick="setTacticalTool('select')" id="tool-select" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-pitch-500 text-pitch-950 transition">
+                            <i class="fa-solid fa-hand-pointer"></i> Geser
+                        </button>
+                        <button onclick="setTacticalTool('draw')" id="tool-draw" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-darkcourt border border-courtborder text-slate-300 hover:border-sky-400 transition">
+                            <i class="fa-solid fa-pen"></i> Garis Pergerakan
+                        </button>
+                        <button onclick="toggleOpponents()" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-darkcourt border border-courtborder text-rose-400 hover:bg-rose-950/30 transition">
+                            <i class="fa-solid fa-users"></i> +/- Lawan (Merah)
+                        </button>
+                        <button onclick="clearTacticalDrawing()" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-darkcourt border border-courtborder text-rose-300 hover:bg-rose-950/20 transition">
+                            <i class="fa-solid fa-eraser"></i> Hapus Garis
+                        </button>
+                        <button onclick="resetTacticalBoard()" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-darkcourt border border-courtborder text-amber-400 hover:bg-amber-950/30 transition">
+                            <i class="fa-solid fa-rotate"></i> Reset Posisi
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tactical Field Canvas Wrapper -->
+                <div class="relative w-full overflow-hidden rounded-2xl border-2 border-slate-700 shadow-2xl flex justify-center bg-emerald-950">
+                    <canvas id="futsalBoardCanvas" class="w-full max-w-4xl h-[420px] sm:h-[500px] cursor-crosshair touch-none"></canvas>
+                </div>
+
+                <!-- Quick Formations Presets -->
+                <div class="flex flex-wrap items-center justify-between gap-3 pt-2 text-xs">
+                    <div class="flex items-center gap-2 font-bold text-slate-400">
+                        <span>Preset Formasi Futsal:</span>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        <button onclick="applyFormation('31')" class="px-3 py-1 rounded-lg bg-darkcourt border border-courtborder text-slate-300 hover:text-white hover:border-pitch-500 transition">Formasi 3 - 1 (Diamond)</button>
+                        <button onclick="applyFormation('22')" class="px-3 py-1 rounded-lg bg-darkcourt border border-courtborder text-slate-300 hover:text-white hover:border-pitch-500 transition">Formasi 2 - 2 (Square)</button>
+                        <button onclick="applyFormation('40')" class="px-3 py-1 rounded-lg bg-darkcourt border border-courtborder text-slate-300 hover:text-white hover:border-pitch-500 transition">Formasi 4 - 0 (Rotasi Sejajar)</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 4: WARM-UP & PROGRAM -->
+        <section id="view-plan" class="hidden space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Warm-up Guide -->
+                <div class="bg-courtcard p-6 rounded-3xl border border-courtborder space-y-4">
+                    <h3 class="heading-font text-xl font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                        <i class="fa-solid fa-person-running text-amber-400"></i> Routine Pemanasan Dinamis (10 Min)
+                    </h3>
+                    <p class="text-xs text-slate-400">Cegah cedera engkel & hamstring dengan urutan pemanasan dinamis sebelum main/latihan:</p>
+
+                    <div class="space-y-3 text-xs">
+                        <div class="p-3 rounded-2xl bg-darkcourt border border-courtborder flex items-start gap-3">
+                            <div class="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-400 font-bold flex items-center justify-center shrink-0">1</div>
+                            <div>
+                                <div class="font-bold text-white">Jogging Ringan & High Knees</div>
+                                <div class="text-slate-400 mt-0.5">3 Menit - Tingkatkan detak jantung & suhu otot tubuh secara perlahan.</div>
+                            </div>
+                        </div>
+
+                        <div class="p-3 rounded-2xl bg-darkcourt border border-courtborder flex items-start gap-3">
+                            <div class="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-400 font-bold flex items-center justify-center shrink-0">2</div>
+                            <div>
+                                <div class="font-bold text-white">Dynamic Groin & Hip Openers (Gate In/Out)</div>
+                                <div class="text-slate-400 mt-0.5">2 Menit - Membuka otot selangkangan & sendi panggul untuk kelincahan menendang.</div>
+                            </div>
+                        </div>
+
+                        <div class="p-3 rounded-2xl bg-darkcourt border border-courtborder flex items-start gap-3">
+                            <div class="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-400 font-bold flex items-center justify-center shrink-0">3</div>
+                            <div>
+                                <div class="font-bold text-white">Ankle Mobility & Lateral Shuffles</div>
+                                <div class="text-slate-400 mt-0.5">2 Menit - Menyiapkan sendi pergelangan kaki untuk perubahan arah mendadak di lapangan semen/interlock.</div>
+                            </div>
+                        </div>
+
+                        <div class="p-3 rounded-2xl bg-darkcourt border border-courtborder flex items-start gap-3">
+                            <div class="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-400 font-bold flex items-center justify-center shrink-0">4</div>
+                            <div>
+                                <div class="font-bold text-white">Short Acceleration Sprints (5-10 Meter)</div>
+                                <div class="text-slate-400 mt-0.5">3 Menit - Lakukan 5 kali sprint pendek eksplosif sebelum menyentuh bola.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recommended Weekly Plan -->
+                <div class="bg-courtcard p-6 rounded-3xl border border-courtborder space-y-4">
+                    <h3 class="heading-font text-xl font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                        <i class="fa-solid fa-calendar-days text-pitch-400"></i> Target Latihan Futsal Mandiri
+                    </h3>
+                    <p class="text-xs text-slate-400">Rekomendasi pembagian jadwal latihan mandiri mingguan:</p>
+
+                    <div class="space-y-2.5 text-xs">
+                        <div class="p-3 rounded-2xl bg-darkcourt border border-courtborder flex items-center justify-between">
+                            <span class="font-bold text-pitch-400">Senin & Kamis</span>
+                            <span class="text-slate-200">Sole Ball Mastery + Wall Passing (30 Min)</span>
+                        </div>
+                        <div class="p-3 rounded-2xl bg-darkcourt border border-courtborder flex items-center justify-between">
+                            <span class="font-bold text-sky-400">Selasa & Jumat</span>
+                            <span class="text-slate-200">Agility Ladder / Cone Drill & Sprint HIIT (25 Min)</span>
+                        </div>
+                        <div class="p-3 rounded-2xl bg-darkcourt border border-courtborder flex items-center justify-between">
+                            <span class="font-bold text-amber-400">Rabu & Sabtu</span>
+                            <span class="text-slate-200">Simulasi Taktik & Shooting Finishing (30 Min)</span>
+                        </div>
+                        <div class="p-3 rounded-2xl bg-darkcourt border border-courtborder flex items-center justify-between">
+                            <span class="font-bold text-purple-400">Minggu</span>
+                            <span class="text-slate-200">Match Day / Rest & Active Recovery</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 5: LOGS & HISTORY -->
+        <section id="view-logs" class="hidden space-y-6">
+            <div class="bg-courtcard p-6 rounded-3xl border border-courtborder space-y-6">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                        <h2 class="heading-font text-2xl font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                            <i class="fa-solid fa-clipboard-list text-purple-400"></i> Catatan Latihan Saya
+                        </h2>
+                        <p class="text-xs text-slate-400">Riwayat sesi latihan yang telah kamu selesaikan.</p>
+                    </div>
+
+                    <button onclick="clearTrainingLogs()" class="px-4 py-2 rounded-xl bg-darkcourt border border-courtborder text-rose-400 text-xs font-bold hover:bg-rose-950/20 transition">
+                        Reset Catatan
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div class="bg-darkcourt p-4 rounded-2xl border border-courtborder text-center">
+                        <div class="text-xs text-slate-400 font-medium">Sesi Selesai</div>
+                        <div id="statTotalSessions" class="heading-font text-3xl font-bold text-pitch-400 mt-1">0</div>
+                    </div>
+                    <div class="bg-darkcourt p-4 rounded-2xl border border-courtborder text-center">
+                        <div class="text-xs text-slate-400 font-medium">Total Menit Latihan</div>
+                        <div id="statTotalMinutes" class="heading-font text-3xl font-bold text-sky-400 mt-1">0</div>
+                    </div>
+                    <div class="bg-darkcourt p-4 rounded-2xl border border-courtborder text-center">
+                        <div class="text-xs text-slate-400 font-medium">Latihan Terakhir</div>
+                        <div id="statLastDate" class="heading-font text-lg font-bold text-amber-400 mt-2">-</div>
+                    </div>
+                </div>
+
+                <!-- History Table / List -->
+                <div class="space-y-3">
+                    <h3 class="text-sm font-bold text-slate-300">Riwayat Sesi Terakhir:</h3>
+                    <div id="logsHistoryList" class="space-y-2">
+                        <!-- Loaded dynamically -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Drill Detail Modal -->
+    <div id="drillModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm hidden">
+        <div class="bg-courtcard max-w-xl w-full rounded-3xl p-6 border border-courtborder shadow-2xl relative space-y-4 max-h-[90vh] overflow-y-auto">
+            <button onclick="closeDrillModal()" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-darkcourt border border-courtborder text-slate-400 hover:text-white flex items-center justify-center text-sm">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+            <div class="flex items-center gap-3">
+                <div id="modalCategoryBadge" class="px-3 py-1 rounded-full text-[10px] font-extrabold uppercase bg-pitch-500/10 text-pitch-400 border border-pitch-500/20">
+                    Category
+                </div>
+                <div id="modalDifficultyBadge" class="text-xs text-amber-400 font-bold">
+                    ★★☆ Menengah
+                </div>
+            </div>
+
+            <h3 id="modalDrillTitle" class="heading-font text-2xl font-bold text-white uppercase">
+                Sole Roll & V-Cut Push
+            </h3>
+
+            <!-- Simulated Visual Diagram -->
+            <div id="modalVisualBox" class="w-full h-44 rounded-2xl futsal-court-bg border border-slate-700 flex items-center justify-center relative overflow-hidden">
+                <div id="modalVisualContent" class="text-center p-4">
+                    <i class="fa-solid fa-futbol text-4xl text-pitch-400 animate-bounce"></i>
+                    <p class="text-xs text-slate-200 mt-2 font-medium">Diagram Pergerakan Drill</p>
+                </div>
+            </div>
+
+            <div class="space-y-2">
+                <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider">Langkah-Langkah Pelaksanaan:</h4>
+                <ol id="modalStepsList" class="list-decimal list-inside text-xs text-slate-300 space-y-1.5 leading-relaxed bg-darkcourt p-4 rounded-2xl border border-courtborder">
+                    <!-- Dynamic steps -->
+                </ol>
+            </div>
+
+            <div class="flex items-center justify-between pt-2">
+                <div class="text-xs text-slate-400">
+                    Estimasi Durasi: <span id="modalDrillDuration" class="text-white font-bold">15 Menit</span>
+                </div>
+                <button onclick="markDrillCompleted()" class="px-5 py-2.5 rounded-xl bg-pitch-500 hover:bg-pitch-400 text-pitch-950 font-bold text-xs shadow-lg shadow-pitch-500/20 transition flex items-center gap-2">
+                    <i class="fa-solid fa-circle-check"></i> Selesaikan Drill Ini
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toastContainer" class="fixed bottom-6 right-6 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <script>
+        // DRILL DATABASE DATA
+        const drillDatabase = [
+            {
+                id: 'd1',
+                title: 'Sole Roll & Stop (Kontrol Telapak)',
+                category: 'control',
+                categoryLabel: 'Sole Control',
+                difficulty: 'Pemula',
+                duration: 10,
+                desc: 'Mengasah kemampuan mengontrol bola dengan telapak kaki (*sole*) khas pemain futsal.',
+                steps: [
+                    'Gunakan telapak kaki kanan untuk menarik bola melintas ke arah kiri.',
+                    'Hentikan bola menggunakan telapak kaki kiri tepat di depan badan.',
+                    'Lakukan gerakan sebaliknya menuju arah kanan secara berulang.',
+                    'Jaga posisi badan agak membungkuk dengan lutut sedikit ditekuk untuk keseimbangan.'
+                ],
+                visualIcon: 'fa-shoe-prints'
+            },
+            {
+                id: 'd2',
+                title: 'V-Cut Fake & Push',
+                category: 'control',
+                categoryLabel: 'Sole Control',
+                difficulty: 'Menengah',
+                duration: 15,
+                desc: 'Trik kecohan dasar futsal untuk melepaskan diri dari presing ketat lawan.',
+                steps: [
+                    'Tarik bola ke belakang menggunakan telapak kaki membentuk garis diagonal.',
+                    'Secara eksplosif dorong bola ke depan dengan bagian luar kaki (*outstep*) membentuk sudut huruf V.',
+                    'Lakukan gerakan mengecoh ini bergantian kaki kanan dan kaki kiri.',
+                    'Fokus pada perubahan kecepatan saat memotong arah bola.'
+                ],
+                visualIcon: 'fa-bolt'
+            },
+            {
+                id: 'd3',
+                title: 'Wall One-Touch Rhythm',
+                category: 'passing',
+                categoryLabel: 'Passing & Wall',
+                difficulty: 'Pemula',
+                duration: 15,
+                desc: 'Latihan passing pantul satu sentuhan dengan dinding untuk membiasakan ritme cepat.',
+                steps: [
+                    'Berdiri berjarak 2 - 3 meter di depan dinding kokoh.',
+                    'Umpan bola ke dinding menggunakan bagian dalam kaki (*instep*).',
+                    'Terima pantulan bola dengan langsung mengumpan kembali tanpa menghentikan bola (One Touch).',
+                    'Ulangi 30 kali passing kaki kanan, lalu 30 kali passing kaki kiri.'
+                ],
+                visualIcon: 'fa-arrows-left-right'
+            },
+            {
+                id: 'd4',
+                title: 'Sole Cushion & Pivot Pass',
+                category: 'passing',
+                categoryLabel: 'Passing & Wall',
+                difficulty: 'Menengah',
+                duration: 12,
+                desc: 'Simulasi menerima umpan kencang dari Anchor dan langsung meneruskannya ke Flank.',
+                steps: [
+                    'Minta rekan/pantulkan ke dinding umpan mendatar kencang.',
+                    'Hentikan bola seketika (*cushion*) menggunakan telapak kaki tepat di tempat.',
+                    'Putar badan (*pivot*) 90 derajat lalu lepas umpan akurat ke arah samping.',
+                    'Pastikan tumpuan kaki kokoh saat menahan bola kencang.'
+                ],
+                visualIcon: 'fa-bullseye'
+            },
+            {
+                id: 'd5',
+                title: 'Toe Poke Quick Release (Finishing Concong)',
+                category: 'shooting',
+                categoryLabel: 'Finishing',
+                difficulty: 'Menengah',
+                duration: 15,
+                desc: 'Teknik tembakan cocor/concong khas futsal untuk mengejutkan kiper dari jarak sempit.',
+                steps: [
+                    'Dribel bola mendatar mendekati area penalti.',
+                    'Tanpa ayunan tungkai terlalu belakang, lecutkan ujung sepatu (*toe poke*) menembak bola.',
+                    'Incar sudut bawah gawang yang sulit dijangkau kiper.',
+                    'Latihan ini melatih kecepatan melepaskan tembakan tanpa ruang ayunan luas.'
+                ],
+                visualIcon: 'fa-crosshair'
+            },
+            {
+                id: 'd6',
+                title: 'T-Drill Agility & Lateral Shuffles',
+                category: 'agility',
+                categoryLabel: 'Agility & Stamina',
+                difficulty: 'Lanjutan',
+                duration: 20,
+                desc: 'Latihan kelincahan cone T-Drill untuk daya tahan akselerasi & kelincahan lateral.',
+                steps: [
+                    'Susun 4 cone membentuk huruf T dengan jarak antar cone 5 meter.',
+                    'Sprint lurus dari cone bawah ke cone tengah.',
+                    'Geser kesamping (*shuffle*) ke cone kiri, lalu shuffle cepat ke cone kanan ujung.',
+                    'Kembali ke tengah lalu lari mundur (*backpedal*) ke posisi awal.'
+                ],
+                visualIcon: 'fa-gauge-high'
+            }
+        ];
+
+        // STATE VARIABLES
+        let activeTab = 'drills';
+        let currentFilter = 'all';
+        let selectedDrillForModal = null;
+
+        // Sound Settings & AudioContext Singleton
+        let audioCtx = null;
+        let soundEnabled = true;
+
+        function getAudioContext() {
+            if (!audioCtx) {
+                const AudioCtxClass = window.AudioContext || window.webkitAudioContext;
+                if (AudioCtxClass) audioCtx = new AudioCtxClass();
+            }
+            if (audioCtx && audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            return audioCtx;
+        }
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            const icon = document.getElementById('soundToggleIcon');
+            if (icon) {
+                icon.className = soundEnabled ? 'fa-solid fa-volume-high text-pitch-400' : 'fa-solid fa-volume-xmark text-slate-500';
+            }
+            showToast(soundEnabled ? 'Suara peluit diaktifkan 🔔' : 'Suara peluit dimatikan 🔕');
+        }
+
+        // Timer State
+        let timerInterval = null;
+        let timerRunning = false;
+        let timerMode = 'work'; // 'work' or 'rest'
+        let currentSet = 1;
+        let totalSets = 8;
+        let workDuration = 20;
+        let restDuration = 10;
+        let timeRemaining = workDuration;
+
+        // User Stats State
+        let userStats = JSON.parse(localStorage.getItem('futsal_user_stats')) || {
+            streakDays: 0,
+            totalMinutes: 0,
+            completedSessions: 0,
+            lastTrainingDate: null,
+            logs: []
+        };
+
+        window.addEventListener('DOMContentLoaded', () => {
+            checkAndUpdateStreak();
+            renderDrillCards();
+            updateStatsUI();
+            initTacticalCanvas();
+            loadLogsUI();
+        });
+
+        function checkAndUpdateStreak() {
+            const today = new Date().toISOString().split('T')[0];
+            if (!userStats.lastTrainingDate) {
+                userStats.streakDays = 0;
+            } else if (userStats.lastTrainingDate !== today) {
+                const last = new Date(userStats.lastTrainingDate);
+                const curr = new Date(today);
+                const diffTime = Math.abs(curr - last);
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                if (diffDays > 1) {
+                    userStats.streakDays = 0;
+                }
+            }
+            saveStatsToStorage();
+        }
+
+        function switchTab(tabName) {
+            activeTab = tabName;
+
+            // Hide all tab views
+            ['drills', 'timer', 'tactics', 'plan', 'logs'].forEach(t => {
+                const view = document.getElementById(`view-${t}`);
+                const btn = document.getElementById(`tabBtn-${t}`);
+                if (view) view.classList.add('hidden');
+                if (btn) {
+                    btn.className = "px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-300 hover:bg-courtcard transition whitespace-nowrap flex items-center gap-2";
+                }
+            });
+
+            // Show selected view
+            const activeView = document.getElementById(`view-${tabName}`);
+            const activeBtn = document.getElementById(`tabBtn-${tabName}`);
+            if (activeView) activeView.classList.remove('hidden');
+            if (activeBtn) {
+                activeBtn.className = "active-tab px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-2 transition whitespace-nowrap";
+            }
+
+            if (tabName === 'tactics') {
+                setTimeout(resizeTacticalCanvas, 50);
+            }
+        }
+
+        // DRILLS LIBRARY RENDERER
+        function renderDrillCards() {
+            const container = document.getElementById('drillsGrid');
+            if (!container) return;
+            container.innerHTML = '';
+
+            const filtered = currentFilter === 'all' 
+                ? drillDatabase 
+                : drillDatabase.filter(d => d.category === currentFilter);
+
+            filtered.forEach(drill => {
+                const card = document.createElement('div');
+                card.className = "bg-courtcard rounded-3xl p-5 border border-courtborder flex flex-col justify-between hover:border-pitch-500/50 transition duration-300 group";
+
+                card.innerHTML = `
+                    <div>
+                        <div class="flex items-center justify-between gap-2 mb-3">
+                            <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-pitch-500/10 text-pitch-400 border border-pitch-500/20">
+                                ${drill.categoryLabel}
+                            </span>
+                            <span class="text-xs text-amber-400 font-bold">${drill.difficulty}</span>
+                        </div>
+
+                        <div class="flex items-start gap-3 mb-3">
+                            <div class="w-10 h-10 rounded-2xl bg-darkcourt text-pitch-400 flex items-center justify-center text-lg border border-courtborder shrink-0 group-hover:scale-110 transition">
+                                <i class="fa-solid ${drill.visualIcon}"></i>
+                            </div>
+                            <h3 class="heading-font text-lg font-bold text-white uppercase group-hover:text-pitch-400 transition">${drill.title}</h3>
+                        </div>
+
+                        <p class="text-xs text-slate-400 leading-relaxed mb-4 line-clamp-2">${drill.desc}</p>
+                    </div>
+
+                    <div class="pt-3 border-t border-courtborder/60 flex items-center justify-between">
+                        <span class="text-[11px] text-slate-400 font-semibold"><i class="fa-regular fa-clock mr-1"></i>${drill.duration} Min</span>
+                        <button onclick="openDrillModal('${drill.id}')" class="px-3.5 py-1.5 rounded-xl bg-darkcourt hover:bg-pitch-500 hover:text-pitch-950 text-slate-200 border border-courtborder text-xs font-bold transition flex items-center gap-1.5">
+                            Detail <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                        </button>
+                    </div>
+                `;
+
+                container.appendChild(card);
+            });
+        }
+
+        function filterDrills(cat, btnElement) {
+            currentFilter = cat;
+            document.querySelectorAll('.drill-filter-btn').forEach(btn => {
+                btn.className = "drill-filter-btn px-3 py-1.5 rounded-lg text-xs font-bold bg-darkcourt text-slate-300 border border-courtborder hover:border-pitch-500 transition";
+            });
+            if (btnElement) {
+                btnElement.className = "drill-filter-btn px-3 py-1.5 rounded-lg text-xs font-bold bg-pitch-500 text-pitch-950 transition";
+            }
+            renderDrillCards();
+        }
+
+        function openDrillModal(drillId) {
+            const drill = drillDatabase.find(d => d.id === drillId);
+            if (!drill) return;
+
+            selectedDrillForModal = drill;
+            document.getElementById('modalCategoryBadge').innerText = drill.categoryLabel;
+            document.getElementById('modalDifficultyBadge').innerText = `Tingkat: ${drill.difficulty}`;
+            document.getElementById('modalDrillTitle').innerText = drill.title;
+            document.getElementById('modalDrillDuration').innerText = `${drill.duration} Menit`;
+
+            const visualContent = document.getElementById('modalVisualContent');
+            if (visualContent) {
+                visualContent.innerHTML = `
+                    <div class="relative flex flex-col items-center justify-center">
+                        <div class="w-16 h-16 rounded-2xl bg-pitch-500/20 border border-pitch-500/40 flex items-center justify-center text-pitch-400 text-3xl shadow-lg shadow-pitch-500/20 animate-pulse">
+                            <i class="fa-solid ${drill.visualIcon}"></i>
+                        </div>
+                        <p class="text-xs text-slate-200 mt-3 font-bold tracking-wide">${drill.title}</p>
+                        <span class="text-[10px] text-pitch-400 font-semibold mt-0.5">Modul Fokus: ${drill.categoryLabel}</span>
+                    </div>
+                `;
+            }
+
+            const stepsContainer = document.getElementById('modalStepsList');
+            stepsContainer.innerHTML = '';
+            drill.steps.forEach(s => {
+                const li = document.createElement('li');
+                li.innerText = s;
+                stepsContainer.appendChild(li);
+            });
+
+            document.getElementById('drillModal').classList.remove('hidden');
+        }
+
+        function closeDrillModal() {
+            document.getElementById('drillModal').classList.add('hidden');
+        }
+
+        function markDrillCompleted() {
+            if (!selectedDrillForModal) return;
+            
+            logCompletedSession(selectedDrillForModal.title, selectedDrillForModal.duration);
+            closeDrillModal();
+
+            try {
+                confetti({ particleCount: 50, spread: 60, origin: { y: 0.6 } });
+            } catch(e){}
+
+            showToast(`Selesai! +${selectedDrillForModal.duration} Menit dicatat dalam riwayat latihan! ⚽`);
+        }
+
+        // TIMER LOGIC & AUDIO SYNTHESIZER
+        function loadTimerPreset(presetType) {
+            resetTimer();
+            if (presetType === 'futsalHiit') {
+                workDuration = 20;
+                restDuration = 10;
+                totalSets = 8;
+            } else if (presetType === 'ballMastery') {
+                workDuration = 45;
+                restDuration = 15;
+                totalSets = 6;
+            } else if (presetType === 'recovery') {
+                workDuration = 30;
+                restDuration = 30;
+                totalSets = 5;
+            }
+
+            document.getElementById('inputWorkSec').value = workDuration;
+            document.getElementById('inputRestSec').value = restDuration;
+            document.getElementById('inputTotalSets').value = totalSets;
+            updateCustomTimerInputs();
+            applyCustomTimer();
+        }
+
+        function updateCustomTimerInputs() {
+            document.getElementById('valWorkSec').innerText = `${document.getElementById('inputWorkSec').value}s`;
+            document.getElementById('valRestSec').innerText = `${document.getElementById('inputRestSec').value}s`;
+            document.getElementById('valTotalSets').innerText = document.getElementById('inputTotalSets').value;
+        }
+
+        function applyCustomTimer() {
+            resetTimer();
+            workDuration = parseInt(document.getElementById('inputWorkSec').value);
+            restDuration = parseInt(document.getElementById('inputRestSec').value);
+            totalSets = parseInt(document.getElementById('inputTotalSets').value);
+            timeRemaining = workDuration;
+            document.getElementById('totalSetsText').innerText = totalSets;
+            updateTimerDisplay();
+            showToast('Settingan timer berhasil diperbarui!');
+        }
+
+        function toggleTimer() {
+            if (timerRunning) {
+                pauseTimer();
+            } else {
+                startTimer();
+            }
+        }
+
+        function startTimer() {
+            if (timerRunning) return;
+            getAudioContext(); // Preload/resume audio on user gesture
+            timerRunning = true;
+            document.getElementById('timerIcon').className = "fa-solid fa-pause";
+            document.getElementById('timerStateBadge').className = "w-2.5 h-2.5 rounded-full bg-pitch-500 animate-ping";
+            document.getElementById('timerStatusText').innerText = "Sedang Berjalan";
+
+            timerInterval = setInterval(() => {
+                timeRemaining--;
+                
+                // Play audio beep during last 3 seconds
+                if (timeRemaining <= 3 && timeRemaining > 0) {
+                    playShortBeep();
+                }
+
+                if (timeRemaining < 0) {
+                    playLongWhistle();
+                    if (timerMode === 'work') {
+                        // Switch to rest
+                        timerMode = 'rest';
+                        timeRemaining = restDuration;
+                        document.getElementById('timerSubLabel').innerText = "Istirahat / Napas";
+                        document.getElementById('timerSubLabel').className = "text-xs font-bold text-amber-400 uppercase tracking-widest mt-1";
+                    } else {
+                        // Switch back to work or finish
+                        if (currentSet >= totalSets) {
+                            finishTimerWorkout();
+                            return;
+                        }
+                        currentSet++;
+                        timerMode = 'work';
+                        timeRemaining = workDuration;
+                        document.getElementById('currentSetText').innerText = currentSet;
+                        document.getElementById('timerSubLabel').innerText = "Sesi Latihan";
+                        document.getElementById('timerSubLabel').className = "text-xs font-bold text-pitch-400 uppercase tracking-widest mt-1";
+                    }
+                }
+
+                updateTimerDisplay();
+            }, 1000);
+        }
+
+        function pauseTimer() {
+            clearInterval(timerInterval);
+            timerRunning = false;
+            document.getElementById('timerIcon').className = "fa-solid fa-play";
+            document.getElementById('timerStateBadge').className = "w-2.5 h-2.5 rounded-full bg-amber-500";
+            document.getElementById('timerStatusText').innerText = "Dihentikan Sementara";
+        }
+
+        function resetTimer() {
+            pauseTimer();
+            timerMode = 'work';
+            currentSet = 1;
+            timeRemaining = workDuration;
+            document.getElementById('currentSetText').innerText = currentSet;
+            document.getElementById('timerSubLabel').innerText = "Sesi Latihan";
+            document.getElementById('timerSubLabel').className = "text-xs font-bold text-pitch-400 uppercase tracking-widest mt-1";
+            document.getElementById('timerStatusText').innerText = "Siap Dimulai";
+            updateTimerDisplay();
+        }
+
+        function updateTimerDisplay() {
+            const mins = Math.floor(timeRemaining / 60);
+            const secs = timeRemaining % 60;
+            document.getElementById('timerCountdown').innerText = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+
+            // Update Circle Ring Offset
+            const totalForCurrentMode = timerMode === 'work' ? workDuration : restDuration;
+            const ring = document.getElementById('timerProgressRing');
+            const circumference = 276.46; // 2 * PI * 44
+            const progress = (timeRemaining / totalForCurrentMode);
+            const offset = circumference - (progress * circumference);
+            ring.style.strokeDashoffset = offset;
+
+            if (timerMode === 'work') {
+                ring.setAttribute('class', 'text-pitch-500 transition-all duration-1000');
+            } else {
+                ring.setAttribute('class', 'text-amber-400 transition-all duration-1000');
+            }
+        }
+
+        function finishTimerWorkout() {
+            resetTimer();
+            const totalWorkSec = (workDuration * totalSets);
+            const durationMin = Math.max(1, Math.round(totalWorkSec / 60));
+            logCompletedSession(`HIIT Tabata (${totalSets} Ronde)`, durationMin);
+
+            try {
+                confetti({ particleCount: 80, spread: 90, origin: { y: 0.5 } });
+            } catch(e){}
+
+            showToast(`🔥 Selamat! Kamu menyelesaikan seluruh ${totalSets} ronde HIIT futsal!`);
+        }
+
+        // Web Audio API Whistle/Beep Synthesizer using AudioContext Singleton
+        function playShortBeep() {
+            if (!soundEnabled) return;
+            try {
+                const ctx = getAudioContext();
+                if (!ctx) return;
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(800, ctx.currentTime);
+                gain.gain.setValueAtTime(0.15, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.15);
+            } catch(e){}
+        }
+
+        function playLongWhistle() {
+            if (!soundEnabled) return;
+            try {
+                const ctx = getAudioContext();
+                if (!ctx) return;
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(1800, ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(2200, ctx.currentTime + 0.3);
+                gain.gain.setValueAtTime(0.2, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.5);
+            } catch(e){}
+        }
+
+        // TACTICAL BOARD CANVAS ENGINE
+        let canvas, ctx;
+        let tacticalTool = 'select'; // 'select' or 'draw'
+        let isDrawing = false;
+        let drawings = []; // Array of line strokes
+        let currentStroke = [];
+        let draggedToken = null;
+
+        // Futsal Tokens (Players, Opponents, Ball, Cones)
+        let tokens = [
+            { id: 'gk', label: 'GK', x: 200, y: 50, color: '#f59e0b', type: 'player' },
+            { id: 'p1', label: '1 (Anchor)', x: 200, y: 130, color: '#22c55e', type: 'player' },
+            { id: 'p2', label: '2 (Flank L)', x: 80, y: 220, color: '#22c55e', type: 'player' },
+            { id: 'p3', label: '3 (Flank R)', x: 320, y: 220, color: '#22c55e', type: 'player' },
+            { id: 'p4', label: '4 (Pivot)', x: 200, y: 340, color: '#22c55e', type: 'player' },
+            { id: 'ball', label: '⚽', x: 200, y: 160, color: '#ffffff', type: 'ball' }
+        ];
+
+        function initTacticalCanvas() {
+            canvas = document.getElementById('futsalBoardCanvas');
+            if (!canvas) return;
+            ctx = canvas.getContext('2d');
+
+            resizeTacticalCanvas();
+            window.addEventListener('resize', resizeTacticalCanvas);
+
+            // Pointer event listeners
+            canvas.addEventListener('mousedown', handlePointerDown);
+            canvas.addEventListener('mousemove', handlePointerMove);
+            window.addEventListener('mouseup', handlePointerUp);
+
+            canvas.addEventListener('touchstart', handlePointerDown, { passive: false });
+            canvas.addEventListener('touchmove', handlePointerMove, { passive: false });
+            window.addEventListener('touchend', handlePointerUp, { passive: false });
+
+            applyFormation('31');
+        }
+
+        function resizeTacticalCanvas() {
+            if (!canvas) return;
+            const container = canvas.parentElement;
+            if (!container) return;
+            const width = container.clientWidth || 800;
+            const height = Math.min(500, Math.max(380, Math.round(width * 0.6)));
+            
+            if (canvas.width !== width || canvas.height !== height) {
+                canvas.width = width;
+                canvas.height = height;
+                drawTacticalBoard();
+            }
+        }
+
+        function setTacticalTool(tool) {
+            tacticalTool = tool;
+            document.getElementById('tool-select').className = tool === 'select' ? 'px-3 py-1.5 rounded-xl text-xs font-bold bg-pitch-500 text-pitch-950 transition' : 'px-3 py-1.5 rounded-xl text-xs font-bold bg-darkcourt border border-courtborder text-slate-300 hover:border-sky-400 transition';
+            document.getElementById('tool-draw').className = tool === 'draw' ? 'px-3 py-1.5 rounded-xl text-xs font-bold bg-sky-400 text-slate-950 transition' : 'px-3 py-1.5 rounded-xl text-xs font-bold bg-darkcourt border border-courtborder text-slate-300 hover:border-sky-400 transition';
+        }
+
+        function getCanvasCoords(e) {
+            const rect = canvas.getBoundingClientRect();
+            let clientX = e.clientX;
+            let clientY = e.clientY;
+
+            if (e.touches && e.touches.length > 0) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            }
+
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+
+            return {
+                x: (clientX - rect.left) * scaleX,
+                y: (clientY - rect.top) * scaleY
+            };
+        }
+
+        function handlePointerDown(e) {
+            const coords = getCanvasCoords(e);
+
+            if (tacticalTool === 'draw') {
+                isDrawing = true;
+                currentStroke = [{ x: coords.x, y: coords.y }];
+            } else {
+                draggedToken = null;
+                // Check tokens in reverse so topmost token gets selected
+                for (let i = tokens.length - 1; i >= 0; i--) {
+                    const tok = tokens[i];
+                    const dist = Math.hypot(tok.x - coords.x, tok.y - coords.y);
+                    if (dist < 26) {
+                        draggedToken = tok;
+                        break;
+                    }
+                }
+            }
+        }
+
+        function handlePointerMove(e) {
+            if (!isDrawing && !draggedToken) return;
+            const coords = getCanvasCoords(e);
+
+            if (isDrawing) {
+                if (e.cancelable) e.preventDefault();
+                currentStroke.push({ x: coords.x, y: coords.y });
+                drawTacticalBoard();
+            } else if (draggedToken) {
+                if (e.cancelable) e.preventDefault();
+                draggedToken.x = Math.max(15, Math.min(canvas.width - 15, coords.x));
+                draggedToken.y = Math.max(15, Math.min(canvas.height - 15, coords.y));
+                drawTacticalBoard();
+            }
+        }
+
+        function handlePointerUp() {
+            if (isDrawing) {
+                if (currentStroke.length > 1) {
+                    drawings.push(currentStroke);
+                }
+                currentStroke = [];
+                isDrawing = false;
+            }
+            draggedToken = null;
+        }
+
+        function clearTacticalDrawing() {
+            drawings = [];
+            drawTacticalBoard();
+            showToast('Garis taktik dibersihkan.');
+        }
+
+        function resetTacticalBoard() {
+            drawings = [];
+            applyFormation('31');
+        }
+
+        function toggleOpponents() {
+            const hasOpp = tokens.some(t => t.color === '#ef4444');
+            const w = canvas.width || 600;
+            const h = canvas.height || 450;
+
+            if (hasOpp) {
+                tokens = tokens.filter(t => t.color !== '#ef4444');
+                showToast('Pemain lawan disembunyikan.');
+            } else {
+                tokens.push(
+                    { id: 'op_gk', label: 'GK-O', x: w * 0.5, y: h * 0.9, color: '#ef4444', type: 'player' },
+                    { id: 'op1', label: 'D1', x: w * 0.35, y: h * 0.65, color: '#ef4444', type: 'player' },
+                    { id: 'op2', label: 'D2', x: w * 0.65, y: h * 0.65, color: '#ef4444', type: 'player' }
+                );
+                showToast('Pemain lawan (Merah) ditambahkan!');
+            }
+            drawTacticalBoard();
+        }
+
+        function applyFormation(type) {
+            const w = canvas.width || 600;
+            const h = canvas.height || 450;
+
+            if (type === '31') {
+                tokens = [
+                    { id: 'gk', label: 'GK', x: w * 0.5, y: h * 0.1, color: '#f59e0b', type: 'player' },
+                    { id: 'p1', label: 'Anchor', x: w * 0.5, y: h * 0.3, color: '#22c55e', type: 'player' },
+                    { id: 'p2', label: 'Flank L', x: w * 0.2, y: h * 0.5, color: '#22c55e', type: 'player' },
+                    { id: 'p3', label: 'Flank R', x: w * 0.8, y: h * 0.5, color: '#22c55e', type: 'player' },
+                    { id: 'p4', label: 'Pivot', x: w * 0.5, y: h * 0.8, color: '#22c55e', type: 'player' },
+                    { id: 'ball', label: '⚽', x: w * 0.5, y: h * 0.38, color: '#ffffff', type: 'ball' }
+                ];
+            } else if (type === '22') {
+                tokens = [
+                    { id: 'gk', label: 'GK', x: w * 0.5, y: h * 0.1, color: '#f59e0b', type: 'player' },
+                    { id: 'p1', label: 'Def L', x: w * 0.25, y: h * 0.35, color: '#22c55e', type: 'player' },
+                    { id: 'p2', label: 'Def R', x: w * 0.75, y: h * 0.35, color: '#22c55e', type: 'player' },
+                    { id: 'p3', label: 'Att L', x: w * 0.25, y: h * 0.75, color: '#22c55e', type: 'player' },
+                    { id: 'p4', label: 'Att R', x: w * 0.75, y: h * 0.75, color: '#22c55e', type: 'player' },
+                    { id: 'ball', label: '⚽', x: w * 0.5, y: h * 0.4, color: '#ffffff', type: 'ball' }
+                ];
+            } else if (type === '40') {
+                tokens = [
+                    { id: 'gk', label: 'GK', x: w * 0.5, y: h * 0.1, color: '#f59e0b', type: 'player' },
+                    { id: 'p1', label: 'Pos 1', x: w * 0.15, y: h * 0.45, color: '#22c55e', type: 'player' },
+                    { id: 'p2', label: 'Pos 2', x: w * 0.38, y: h * 0.48, color: '#22c55e', type: 'player' },
+                    { id: 'p3', label: 'Pos 3', x: w * 0.62, y: h * 0.48, color: '#22c55e', type: 'player' },
+                    { id: 'p4', label: 'Pos 4', x: w * 0.85, y: h * 0.45, color: '#22c55e', type: 'player' },
+                    { id: 'ball', label: '⚽', x: w * 0.5, y: h * 0.52, color: '#ffffff', type: 'ball' }
+                ];
+            }
+            drawTacticalBoard();
+        }
+
+        function drawTacticalBoard() {
+            if (!ctx) return;
+
+            const w = canvas.width;
+            const h = canvas.height;
+
+            // 1. Clear background & draw Futsal Court Lines
+            ctx.fillStyle = '#0b3c26';
+            ctx.fillRect(0, 0, w, h);
+
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.65)';
+            ctx.lineWidth = 2;
+
+            // Boundary
+            ctx.strokeRect(15, 15, w - 30, h - 30);
+
+            // Center Line & Center Circle
+            ctx.beginPath();
+            ctx.moveTo(15, h / 2);
+            ctx.lineTo(w - 15, h / 2);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.arc(w / 2, h / 2, 45, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // Penalty D-Boxes
+            ctx.beginPath();
+            ctx.arc(w / 2, 15, 60, 0, Math.PI);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.arc(w / 2, h - 15, 60, Math.PI, 0);
+            ctx.stroke();
+
+            // Penalty spots
+            ctx.fillStyle = 'rgba(255,255,255,0.7)';
+            ctx.beginPath();
+            ctx.arc(w / 2, 75, 3, 0, Math.PI * 2);
+            ctx.arc(w / 2, h - 75, 3, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 2. Draw user tactic lines
+            ctx.strokeStyle = '#00f0ff';
+            ctx.lineWidth = 3;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+
+            drawings.forEach(stroke => {
+                if (stroke.length < 2) return;
+                ctx.beginPath();
+                stroke.forEach((pt, idx) => {
+                    if (idx === 0) ctx.moveTo(pt.x, pt.y);
+                    else ctx.lineTo(pt.x, pt.y);
+                });
+                ctx.stroke();
+            });
+
+            // Draw current active stroke
+            if (currentStroke.length > 1) {
+                ctx.beginPath();
+                currentStroke.forEach((pt, idx) => {
+                    if (idx === 0) ctx.moveTo(pt.x, pt.y);
+                    else ctx.lineTo(pt.x, pt.y);
+                });
+                ctx.stroke();
+            }
+
+            // 3. Draw Player & Ball Tokens
+            tokens.forEach(tok => {
+                if (tok.type === 'ball') {
+                    ctx.fillStyle = '#ffffff';
+                    ctx.beginPath();
+                    ctx.arc(tok.x, tok.y, 11, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.strokeStyle = '#000000';
+                    ctx.lineWidth = 1.5;
+                    ctx.stroke();
+                    ctx.font = '10px sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText('⚽', tok.x, tok.y);
+                } else {
+                    ctx.fillStyle = tok.color;
+                    ctx.beginPath();
+                    ctx.arc(tok.x, tok.y, 18, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+
+                    // Text Label
+                    ctx.fillStyle = tok.color === '#ef4444' ? '#ffffff' : '#052e16';
+                    ctx.font = 'bold 10px Rajdhani, sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(tok.label, tok.x, tok.y);
+                }
+            });
+        }
+
+        // USER LOGS & STATS STORAGE
+        function logCompletedSession(title, durationMin) {
+            const today = new Date().toISOString().split('T')[0];
+
+            userStats.totalMinutes += durationMin;
+            userStats.completedSessions += 1;
+
+            if (userStats.lastTrainingDate !== today) {
+                userStats.streakDays = (userStats.streakDays || 0) + 1;
+                userStats.lastTrainingDate = today;
+            }
+
+            userStats.logs.unshift({
+                id: Date.now(),
+                title: title,
+                duration: durationMin,
+                date: new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
+            });
+
+            saveStatsToStorage();
+            updateStatsUI();
+            loadLogsUI();
+        }
+
+        function saveStatsToStorage() {
+            localStorage.setItem('futsal_user_stats', JSON.stringify(userStats));
+        }
+
+        function updateStatsUI() {
+            document.getElementById('headerStreak').innerText = userStats.streakDays || 0;
+            document.getElementById('headerTotalTime').innerText = userStats.totalMinutes || 0;
+            document.getElementById('statTotalSessions').innerText = userStats.completedSessions || 0;
+            document.getElementById('statTotalMinutes').innerText = userStats.totalMinutes || 0;
+            document.getElementById('statLastDate').innerText = userStats.lastTrainingDate || '-';
+        }
+
+        function loadLogsUI() {
+            const container = document.getElementById('logsHistoryList');
+            if (!container) return;
+
+            container.innerHTML = '';
+            if (!userStats.logs || userStats.logs.length === 0) {
+                container.innerHTML = `<div class="text-xs text-slate-500 italic p-3 bg-darkcourt rounded-xl border border-courtborder">Belum ada catatan sesi latihan. Selesaikan drill atau timer untuk mencatat progres!</div>`;
+                return;
+            }
+
+            userStats.logs.slice(0, 10).forEach(log => {
+                const item = document.createElement('div');
+                item.className = "p-3 rounded-2xl bg-darkcourt border border-courtborder flex items-center justify-between text-xs";
+                item.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-xl bg-pitch-500/10 text-pitch-400 flex items-center justify-center font-bold">
+                            ⚽
+                        </div>
+                        <div>
+                            <div class="font-bold text-white">${log.title}</div>
+                            <div class="text-[10px] text-slate-400">${log.date}</div>
+                        </div>
+                    </div>
+                    <span class="font-bold text-pitch-400">+${log.duration} Min</span>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        function clearTrainingLogs() {
+            userStats = {
+                streakDays: 0,
+                totalMinutes: 0,
+                completedSessions: 0,
+                lastTrainingDate: null,
+                logs: []
+            };
+            saveStatsToStorage();
+            updateStatsUI();
+            loadLogsUI();
+            showToast('Riwayat latihan berhasil dibersihkan.');
+        }
+
+        function showToast(msg) {
+            const container = document.getElementById('toastContainer');
+            if (!container) return;
+            const toast = document.createElement('div');
+            toast.className = "px-4 py-3 rounded-2xl bg-courtcard text-white text-xs font-semibold border border-pitch-500/40 shadow-2xl flex items-center gap-2 transform translate-y-4 opacity-0 transition-all duration-300 pointer-events-auto";
+            toast.innerHTML = `<i class="fa-solid fa-circle-check text-pitch-400"></i> <span>${msg}</span>`;
+
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-4', 'opacity-0');
+            }, 10);
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-4');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
+                                                                        
